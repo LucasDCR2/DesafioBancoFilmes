@@ -1,3 +1,10 @@
+//                                      javac -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" src/*.java
+//                                      java -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" App
+
+
+//========================================================================< Imports >==========================================================//
+
+import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -11,6 +18,12 @@ import java.sql.Statement;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonArray;
+
+
+//=====================================================================< Classe Netflix >=======================================================//
+
 
 public class Netflix {
     private Connection connection;
@@ -20,6 +33,10 @@ public class Netflix {
         this.connection = connection;
         this.tmdbApiKey = tmdbApiKey;
     }
+
+
+//======================================================================< Criar Tabelas >=======================================================//
+
 
     public void criarTabelas() throws SQLException {
         String tabelaUsuarios = "CREATE TABLE IF NOT EXISTS usuarios (" +
@@ -50,6 +67,10 @@ public class Netflix {
         System.out.println("Tabelas criadas com sucesso!");
     }
 
+
+//======================================================================< Criar Usuario >======================================================//
+
+
     public void criarUsuario(String apelido) throws SQLException {
         String query = "INSERT INTO usuarios (apelido) VALUES (?)";
         PreparedStatement statement = connection.prepareStatement(query);
@@ -58,13 +79,41 @@ public class Netflix {
         System.out.println("Usuário criado com sucesso!");
     }
 
-    public void verCatalogo(String apelido) throws SQLException, IOException {
-        int movieId = 550; // Exemplo: filme "Fight Club"
     
-        String url = "https://api.themoviedb.org/3/movie/" + movieId + "?api_key=" + tmdbApiKey;
+//=======================================================================< Ver catalogo >=====================================================//
+
+
+    public void verCatalogo() throws SQLException, IOException {
+        // Obter o catálogo de filmes da API
+        JsonArray filmesArray = obterCatalogoFilmes();
+
+        System.out.println("Catálogo de Filmes:");
+
+        int count = 1; // Contador para o ID sequencial
+
+        for (JsonElement filmeElement : filmesArray) {
+            JsonObject filmeJson = filmeElement.getAsJsonObject();
+            String title = filmeJson.get("title").getAsString();
+
+            System.out.println("Índice: " + count + ", Título: " + title);
+
+            // Armazenar o filme na tabela "catalogo"
+            inserirFilmeCatalogo(count, title);
+
+            count++; // Incrementar o contador de ID
+        }
+    }
+
+
+//=======================================================================< Obter Filmes >=====================================================//
+
+
+    private JsonArray obterCatalogoFilmes() throws IOException {
+        String url = "https://api.themoviedb.org/3/discover/movie?api_key=" + tmdbApiKey;
+
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("GET");
-    
+
         BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         StringBuilder response = new StringBuilder();
         String line;
@@ -72,20 +121,105 @@ public class Netflix {
             response.append(line);
         }
         reader.close();
-    
-        // Parse a resposta JSON e obtenha os dados relevantes do filme
+
         Gson gson = new Gson();
-        JsonObject movieJson = gson.fromJson(response.toString(), JsonObject.class);
-        String title = movieJson.get("title").getAsString();
-        String overview = movieJson.get("overview").getAsString();
-        String releaseDate = movieJson.get("release_date").getAsString();
-    
-        // Exiba as informações do filme para o usuário
-        System.out.println("Detalhes do Filme:");
-        System.out.println("Título: " + title);
-        System.out.println("Sinopse: " + overview);
-        System.out.println("Data de Lançamento: " + releaseDate);
+        JsonObject catalogJson = gson.fromJson(response.toString(), JsonObject.class);
+        JsonArray filmesArray = catalogJson.getAsJsonArray("results");
+
+        return filmesArray;
     }
+
+
+//======================================================================< Inserir Filmes >===================================================//
+
+
+    private void inserirFilmeCatalogo(int id, String title) throws SQLException {
+        String insertQuery = "INSERT INTO catalogo (id, nome) VALUES (?, ?)";
+        PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
+        insertStatement.setInt(1, id);
+        insertStatement.setString(2, title);
+        insertStatement.executeUpdate();
+        insertStatement.close();
+    }
+
+
+//======================================================================< Add Filmes Lista >==================================================//
+
+
+    public void adicionarFilmeLista(String apelido) throws SQLException {
+        Scanner scanner = new Scanner(System.in);
+
+        // Exibir o catálogo de filmes
+        System.out.println("Catálogo de Filmes:");
+        exibirCatalogo();
+
+        System.out.println("\nDigite o número do filme que deseja adicionar à lista:");
+        int indiceFilme = scanner.nextInt();
+        scanner.nextLine(); // Consumir a quebra de linha após o número
+
+        // Verificar se o índice do filme é válido
+        if (indiceFilme >= 1 && indiceFilme <= catalogo.size()) {
+            Filme filmeSelecionado = catalogo.get(indiceFilme - 1);
+            int idFilme = filmeSelecionado.getId();
+
+            // Verificar se o filme já está na lista do usuário
+            if (verificarFilmeLista(apelido, idFilme)) {
+                System.out.println("Este filme já está na sua lista de filmes para assistir depois.");
+            } else {
+                // Adicionar o filme à tabela "lista_filmes"
+                String insertQuery = "INSERT INTO lista_filmes (apelido, id_filme) VALUES (?, ?)";
+                PreparedStatement insertStatement = connection.prepareStatement(insertQuery);
+                insertStatement.setString(1, apelido);
+                insertStatement.setInt(2, idFilme);
+                insertStatement.executeUpdate();
+                insertStatement.close();
+
+                System.out.println("Filme \"" + filmeSelecionado.getTitulo() + "\" adicionado à sua lista de filmes para assistir depois.");
+            }
+        } else {
+            System.out.println("Índice de filme inválido.");
+        }
+
+        scanner.close();
+    }
+
+    public void exibirCatalogo() throws SQLException {
+        String query = "SELECT id, nome FROM catalogo";
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(query);
+
+        int count = 1;
+        while (resultSet.next()) {
+            int id = resultSet.getInt("id");
+            String titulo = resultSet.getString("nome");
+
+            System.out.println("Índice: " + count + ", Título: " + titulo);
+            count++;
+        }
+
+        statement.close();
+        resultSet.close();
+    }
+
+    
+    private boolean verificarFilmeLista(String apelido, int idFilme) throws SQLException {
+        String query = "SELECT * FROM lista_filmes WHERE apelido = ? AND id_filme = ?";
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, apelido);
+        statement.setInt(2, idFilme);
+        ResultSet resultSet = statement.executeQuery();
+    
+        boolean filmeExiste = resultSet.next();
+    
+        statement.close();
+        resultSet.close();
+    
+        return filmeExiste;
+    }
+    
+
+//========================================================================< Ver Filmes >=====================================================//
+
 
     public void verListaFilmes(String apelido) throws SQLException {
         String query = "SELECT catalogo.id, catalogo.nome " +
@@ -108,6 +242,9 @@ public class Netflix {
     }
 }
 
-// javac -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" src/*.java
-// java -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" App
-// ou 0.28
+
+//============================================================================< Fim >======================================================//
+
+
+//                                 javac -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" src/*.java
+//                                 java -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" App

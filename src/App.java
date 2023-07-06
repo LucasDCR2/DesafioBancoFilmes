@@ -1,3 +1,6 @@
+//                                  javac -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" src/*.java
+//                                  java -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" App
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -44,7 +47,7 @@ public class App {
 
                 switch (opcao) {
                     case 1:
-                        netflix.verCatalogo(apelido);
+                        netflix.verCatalogo();
                         break;
                     case 2:
                         netflix.verListaFilmes(apelido);
@@ -66,3 +69,6 @@ public class App {
         }
     }
 }
+
+//                                  javac -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" src/*.java
+//                                  java -cp "lib/mysql-connector-java-8.0.33.jar:lib/gson-2.8.9.jar:src" App
