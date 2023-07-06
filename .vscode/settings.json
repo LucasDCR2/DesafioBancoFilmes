@@ -1,0 +1,17 @@
+{
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin",
+    "java.project.referencedLibraries": {
+        "include": [
+            "lib/**/*.jar",
+            "c:\\Users\\Pichau\\Downloads\\mysql-connector-java-8.0.28.jar",
+            "c:\\Users\\Pichau\\Downloads\\gson-2.8.9.jar",
+            "/home/imply/Downloads/gson-2.8.9.jar",
+            "/home/imply/Downloads/mysql-connector-java-8.0.28.jar"
+        ],
+        "exclude": [
+            "lib/mysql-connector-java-8.0.28.jar",
+            "lib/gson-2.8.9.jar"
+        ]
+    }
+}
