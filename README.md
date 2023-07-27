@@ -1,18 +1,9 @@
-## Getting Started
+Desafio 2 – Lista de filmes
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
-
-## Folder Structure
-
-The workspace contains two folders by default, where:
-
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
-
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
-
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
-
-## Dependency Management
-
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
+O programa deve iniciar questionando o usuário conectado se houver cadastro anterior e/ou
+permitindo a inserção de novas contas (somente um apelido para identificação como no Netflix). Após
+selecionar o usuário é possível ver o catálogo e ver lista de filmes já selecionados para assistir depois. Ao
+abrir o catálogo deve ser mostrado um filme for vez, consultando The Movie Database (TMDB) e o usuário
+tem a opção de adicionar ou não a sua lista. No menu de ver lista para assistir depois, devem aparecer
+somente os filmes do usuário que está conectado no momento.
+Os dados de usuário e filme devem sem persistidos no banco de dados.
